@@ -1,16 +1,11 @@
 fileFormatVersion: 2
-guid: f7c53011d5f682b47b6cf03ea7e159f1
+guid: 7ec2bd65e353e03459dac7ab53ff2f4b
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: TexturedMaterial
-    second: {fileID: 2100000, guid: da4dc4d57b3f3bb4f94ccf3d73373f7a, type: 2}
+  externalObjects: {}
   materials:
-    materialImportMode: 2
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
     materialLocation: 1
@@ -53,7 +48,7 @@ ModelImporter:
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
-    generateSecondaryUV: 1
+    generateSecondaryUV: 0
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1
