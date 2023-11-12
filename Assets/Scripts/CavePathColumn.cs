@@ -1,104 +1,110 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
-// CavePathColumn =============================================================
-//
-// Unity MonoBehaviour script for the Cave_Path_Column prefab.
+public enum CavePathColumnType {
+    Stalagtite = -1, Stalagmite = 1
+}
 
 [ExecuteAlways]
 public class CavePathColumn : MonoBehaviour {
+    [SerializeField] private float _height = 0.0f;
+    [SerializeField] private float _prevHeight = 0.0f;
+    [SerializeField] private float _nextHeight = 0.0f;
+    [SerializeField] private CavePathColumnType _columnType = CavePathColumnType.Stalagmite;
 
-    // private variables ------------------------------------------------------
-
-    [Header("Column Properties")]
-    [SerializeField][Min(0)] private float _height = 1f;
-    [SerializeField][Min(0)] private float _prevHeight = 0f;
-    [SerializeField][Min(0)] private float _nextHeight = 0f;
-    [SerializeField][Min(0)] private float _frontExtension = 0f;
-
-    private Transform _cap = null;
-    private Transform _base = null;
-
-    // public properties ------------------------------------------------------
+    [SerializeField] private Transform _cap = null;
+    [SerializeField] private Transform _front = null;
+    [SerializeField] private Transform _left = null;
+    [SerializeField] private Transform _right = null;
+    [SerializeField] private Transform _collider = null;
 
     public float Height {
         get { return _height; }
-        set { _height = (value < 0f) ? 0f : value; UpdateLocalPositions(); }
+        set { _height = value; PositionTransforms(); }
     }
 
     public float PrevHeight {
         get { return _prevHeight; }
-        set { _prevHeight = (value < 0f) ? 0f : value; UpdateLocalPositions(); }
+        set { _prevHeight = value; PositionTransforms(); }
     }
 
     public float NextHeight {
         get { return _nextHeight; }
-        set { _nextHeight = (value < 0f) ? 0f : value; UpdateLocalPositions(); }
+        set { _nextHeight = value; PositionTransforms(); }
     }
 
-    public float FrontExtension {
-        get { return _frontExtension; }
-        set { _frontExtension = (value < 0f) ? 0f : value; UpdateLocalPositions(); }
+    public CavePathColumnType ColumnType {
+        get { return _columnType; }
+        set { _columnType = value; PositionTransforms(); }
     }
 
-    // Unity methods ----------------------------------------------------------
-
-    private void Start() {
-        UpdateChildReferences();
+    void Start() {
+        RefreshTransformReferences();
+        PositionTransforms();
     }
 
-    private void Update() {
-        if (!Application.isPlaying) { // do stuff in edit mode...
-            UpdateChildReferences();
-            UpdateLocalPositions();
+    void Update() {
+        if (!Application.isPlaying) {
+            RefreshTransformReferences();
+            PositionTransforms();
         }
     }
 
-    // private methods --------------------------------------------------------
-
-    private void UpdateChildReferences() {
-        _cap = transform.Find("Cap");
-        _base = transform.Find("Base");
+    private void RefreshTransformReferences() {
+        if (_cap == null) _cap = transform.Find("Cap");
+        if (_front == null) _front = transform.Find("Front");
+        if (_left == null) _left = transform.Find("Left");
+        if (_right == null) _right = transform.Find("Right");
+        if (_collider == null) _collider = transform.Find("Collider");
     }
 
-
-    private void UpdateLocalPositions() {
-        // position the column cap
-        if (_cap != null) _cap.localPosition = Vector3.up * _height;
-
-        // position the column base
-        if (_base != null) _base.localPosition = Vector3.up * _height;
-
-        UpdateBaseChildren();
+    private bool CalculateActiveState(float h) {
+        if (_columnType == CavePathColumnType.Stalagmite) {
+            return h > 0;
+        } else {
+            return h < 0;
+        }
     }
 
-    private void UpdateBaseChildren() {
-        if (_base == null) return;
+    private void PositionTransforms() {
+        if (_cap != null) {
+            _cap.localPosition = Vector3.up * _height;
+            _cap.localScale = new Vector3(1f, (float)_columnType, 1f);
+        }
 
-        Vector3 baseScale = Vector3.one;
+        Vector3 newScale = Vector3.one;
 
-        float prevHeightDiff = _height - _prevHeight;
-        float nextHeightDiff = _height - _nextHeight;
-        float colliderHeight = Mathf.Max(Mathf.Max(prevHeightDiff, nextHeightDiff), 0f);
+        if (_front != null) {
+            _front.localPosition = Vector3.zero;
+            newScale.y = _height;
+            _front.localScale = newScale;
+            _front.gameObject.SetActive(CalculateActiveState(newScale.y));
+        }
 
-        for (int i = 0; i < _base.childCount; i++) {
-            Transform child = _base.GetChild(i);
+        if (_left != null) {
+            _left.localPosition = Vector3.up * _prevHeight;
+            newScale.y = _height - _prevHeight;
+            _left.localScale = newScale;
+            _left.gameObject.SetActive(CalculateActiveState(newScale.y));
+        }
 
-            switch (child.name) {
-                case "Front":
-                    baseScale.y = _height + _frontExtension; break;
-                case "Left":
-                    baseScale.y = (prevHeightDiff < 0f) ? 0f : prevHeightDiff; break;
-                case "Right":
-                    baseScale.y = (nextHeightDiff < 0f) ? 0f : nextHeightDiff; break;
-                case "Collider":
-                    baseScale.y = colliderHeight; break;
-                default:
-                    baseScale.y = _height; break;
-            }
+        if (_right != null) {
+            _right.localPosition = Vector3.up * _nextHeight;
+            newScale.y = _height - _nextHeight;
+            _right.localScale = newScale;
+            _right.gameObject.SetActive(CalculateActiveState(newScale.y));
+        }
 
-            child.localScale = baseScale;
+        if (_collider != null) {
+            Transform t = (_columnType == CavePathColumnType.Stalagmite) ?
+                (_prevHeight > _nextHeight) ? _right : _left :
+                (_prevHeight < _nextHeight) ? _right : _left;
+
+            _collider.localPosition = t.localPosition;
+            _collider.localScale = t.localScale;
+            _collider.gameObject.SetActive(t.gameObject.activeSelf);
         }
     }
 }

@@ -1,129 +1,78 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// CavePath ===================================================================
-//
-// Unity MonoBehaviour script for the Cave_Path prefab.
-
 [ExecuteAlways]
 public class CavePath : MonoBehaviour {
+    [SerializeField] private GameObject _prefab = null;
+    [SerializeField] private float _height = 10f;
+    [SerializeField] private uint _length = 0;
+    [SerializeField] private CavePathColumnType _pathType = CavePathColumnType.Stalagmite;
 
-    // private variables ------------------------------------------------------
-
-    [Header("Path Properties")]
-    [SerializeField][Min(1)] private int _length = 1;
-    [SerializeField][Min(0)] private float _height = 1f;
-    [SerializeField][Min(0)] private float _frontExtension = 0f;
-    [SerializeField] private AnimationCurve _pathCurve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 0f));
-
-    private Transform _pathPrefab = null;
-    private LinkedList<CavePathColumn> _columns = new LinkedList<CavePathColumn>();
-
-    // public properties ------------------------------------------------------
-
-    public int Length {
-        get { return _length; }
-        set { _length = value; UpdateChildCount(); }
-    }
+    [SerializeField] private AnimationCurve _curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 0f));
 
     public float Height {
         get { return _height; }
+        set { _height = value; }
     }
 
-    // Unity methods ----------------------------------------------------------
+    public uint Length {
+        get { return _length; }
+        set { _length = value; }
+    }
 
     private void Start() {
-        ResetPrefabReference();
-        UpdateChildCount();
+        UpdateLength(_length);
+        UpdateCurve();
     }
 
     private void Update() {
-        if (!Application.isPlaying) { // do stuff in edit mode...
-            ResetPrefabReference();
-            UpdateChildCount();
+        if (!Application.isPlaying) {
+            UpdateLength(_length);
+            UpdateCurve();
         }
     }
 
-    // private methods --------------------------------------------------------
+    public void UpdateLength(uint length) {
+        if (length == transform.childCount) return;
 
-    private void ResetPrefabReference() {
-        if (_pathPrefab == null) _pathPrefab = transform.Find("Prefab");
-        _pathPrefab.SetAsFirstSibling();
-        _pathPrefab.gameObject.SetActive(false);
-    }
-
-    private void UpdateChildCount() {
-        int adjustment = (_length + 1) - transform.childCount;
-
-        // if child objects need to be added
-        if (adjustment > 0) {
-            for (int i = 0; i < adjustment; i++) {
-                Transform newChild = Instantiate(_pathPrefab, transform);
-                newChild.gameObject.SetActive(true);
-            }
-        }
-
-        // if child objects need to be removed
-        if (adjustment < 0) {
-            for (int i = 0; i < MathF.Abs(adjustment); i++) {
+        if (length < transform.childCount) {
+            for (int i = (transform.childCount - 1); i > (length - 1); i--) {
                 if (Application.isPlaying) {
-                    Destroy(transform.GetChild(1).gameObject);
+                    Destroy(transform.GetChild(i).gameObject);
                 } else {
-                    DestroyImmediate(transform.GetChild(1).gameObject);
+                    DestroyImmediate(transform.GetChild(i).gameObject);
                 }
             }
         }
 
-        // repopulate column list
-        UpdateColumns();
-    }
-
-    private void UpdateColumns() {
-        float minCurveValue = GetMinCurveValue();
-
-        _columns.Clear();
-        for (int i = 1; i < transform.childCount; i++) {
-            Transform child = transform.GetChild(i);
-
-            float curveTime = (_length == 1) ? 0.5f : (float)(i - 1) / (_length - 1);
-            float curveValue = _pathCurve.Evaluate(curveTime);
-
-            Vector3 colPosition = Vector3.zero;
-            colPosition.x = i - 1;
-            colPosition.y = minCurveValue * _height;
-            // set transform's position
-            child.localPosition = colPosition;
-
-            // add this child's CavePathColumn object to the column list
-            LinkedListNode<CavePathColumn> node = _columns.AddLast(child.GetComponent<CavePathColumn>());
-            node.Value.Height = (curveValue + MathF.Abs(minCurveValue)) * _height;
+        if (length > transform.childCount) {
+            for (int i = transform.childCount; i < length; i++) {
+                GameObject gameObj = Instantiate(_prefab, transform);
+                gameObj.transform.localPosition = Vector3.right * i;
+            }
         }
 
-        UpdateNeighbourColumnHeights();
+        _length = length;
     }
 
-    private float GetMinCurveValue() {
-        float minCurveValue = 0f;
+    public void UpdateCurve() {
+        float offset = _height / 2 * (int)_pathType;
 
         for (int i = 0; i < _length; i++) {
-            float curveTime = (_length == 1) ? 0f : (float)i / (_length - 1);
-            float curveValue = _pathCurve.Evaluate(curveTime);
 
-            if (curveValue < minCurveValue) { minCurveValue = curveValue; }
+            transform.GetChild(i).localPosition = (Vector3.right * i) + (Vector3.down * offset);
+
+            Vector3 scale = Vector3.one;
+
+            CavePathColumn block = transform.GetChild(i).GetComponent<CavePathColumn>();
+            if (block != null) {
+                block.ColumnType = _pathType;
+                block.Height = (_curve.Evaluate((_length <= 1) ? 0.0f : (float)i / (_length - 1))) + offset;
+                block.PrevHeight = (i == 0 ? -offset : _curve.Evaluate((_length <= 1) ? 0.0f : (float)(i - 1) / (_length - 1))) + offset;
+                block.NextHeight = (i == _length - 1 ? -offset : _curve.Evaluate((_length <= 1) ? 0.0f : (float)(i + 1) / (_length - 1))) + offset;
+            }
         }
 
-        return minCurveValue;
-    }
-
-    private void UpdateNeighbourColumnHeights() {
-        LinkedListNode<CavePathColumn> node = _columns.First;
-        while (node != null) {
-            node.Value.PrevHeight = (node.Previous != null) ? node.Previous.Value.Height : 0f;
-            node.Value.NextHeight = (node.Next != null) ? node.Next.Value.Height : 0f;
-            node.Value.FrontExtension = _frontExtension;
-            node = node.Next;
-        }
     }
 }
