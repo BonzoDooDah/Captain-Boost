@@ -1,0 +1,76 @@
+{
+    "name": "CaptainBoostControls",
+    "maps": [
+        {
+            "name": "gameplay",
+            "id": "5061dec9-2bc9-470e-9636-ee65d8c32046",
+            "actions": [
+                {
+                    "name": "thrust",
+                    "type": "Button",
+                    "id": "a03dfa7f-4f04-4832-b55d-fdaa48bdce1c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "rotate",
+                    "type": "Value",
+                    "id": "b308a0ad-904a-46c6-87fa-22bb0fe4769e",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a0e1566d-db51-4aa9-9f3f-99b43bc5e18b",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "thrust",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "fde1b3b6-b49a-4354-8584-1bd60aa9a234",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "rotate",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "aad6ab4e-6b66-403d-821e-728b7e3d4d42",
+                    "path": "<Keyboard>/leftArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "rotate",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "3d48790a-9d7f-4962-9d28-06bb9a169797",
+                    "path": "<Keyboard>/rightArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "rotate",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
